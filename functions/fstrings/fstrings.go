@@ -108,3 +108,21 @@ func PurgeElementText(s string) string {
 	s = strings.ReplaceAll(s, "  ", "")
 	return s
 }
+
+// Vérifie si un element existe déjà dans un tableau de strings
+func ElementExistsInArray(s string, array []string) bool {
+	for _, v := range array {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+// Transforme un tableau de chaines en string avec un séparateur , par défaut
+func ArrayToString(array []string, separator string) string {
+	if separator == "" {
+		separator = ","
+	}
+	return strings.Join(array, separator)
+}
