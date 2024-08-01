@@ -158,7 +158,9 @@ func (t Table) Close(db *sql.DB) {
 }
 
 func (t Table) Get(fields string, search string, sort string, start int, limit int) ReturnFunction {
+	message := ""
 	errorMessage := ""
+	getRecords := 0
 	limits := ""
 	var statusCode int32
 	if fields == "" {
@@ -184,22 +186,31 @@ func (t Table) Get(fields string, search string, sort string, start int, limit i
 	sql := t.buildQuery(fields, search, sort, limits)
 	logs.Logs(sql)
 	stmt, err := db.Prepare(sql)
+	var tableData []map[string]interface{}
 	if err != nil {
 		statusCode = 500
+		message = "Get error"
 		errorMessage = err.Error()
-	}
-	defer stmt.Close()
-	rows, _ := stmt.Query()
-	defer rows.Close()
+		// Retourne un tableau vide
+		tableData = make([]map[string]interface{}, 0)
+		getRecords = 0
 
-	tableData := t.fetchData(rows)
+	} else {
+		statusCode = 200
+		message = "Get success"
+		rows, _ := stmt.Query()
+		tableData = t.fetchData(rows)
+		getRecords = len(tableData)
+		defer rows.Close()
+		defer stmt.Close()
+	}
 
 	t.Close(db)
 	returnFunction := ReturnFunction{
 		StatusCode:   statusCode,
-		Message:      "Get success",
+		Message:      message,
 		ErrorMessage: errorMessage,
-		GetRecords:   len(tableData),
+		GetRecords:   getRecords,
 		Rows:         tableData,
 	}
 	return returnFunction
@@ -364,7 +375,6 @@ func (t Table) Update(fields []string, values []interface{}, types []interface{}
 	logs.Logs("Mise à jour réussie dans", t.TableName)
 
 	return returnFunction
-
 }
 
 func (dv DefaultValidator) BeforeDelete() error {

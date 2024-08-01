@@ -23,7 +23,7 @@ func GetMailTemplate(filename string) string {
 	return fileContentString
 }
 
-func SendMail(vars map[string]string) string {
+func SendMail(vars map[string]string) error {
 	from := os.Getenv("SMTP_USER")
 	pass := os.Getenv("SMTP_PASSWORD")
 	to := []string{vars["email"]}
@@ -43,11 +43,10 @@ func SendMail(vars map[string]string) string {
 	err := smtp.SendMail(os.Getenv("SMTP_HOST")+":"+os.Getenv("SMTP_PORT"),
 		smtp.PlainAuth("", from, pass, os.Getenv("SMTP_HOST")),
 		from, to, []byte(msg))
-
 	if err != nil {
 		logs.Logs("smtp error: ", err)
 	}
-	return "ok"
+	return err
 }
 
 // ChkMail verifie la cohérence d'une adresse mail
