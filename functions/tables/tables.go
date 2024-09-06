@@ -155,6 +155,7 @@ func (t Table) Open() (*sql.DB, error) {
 func (t Table) Close(db *sql.DB) {
 	logs.Logs(t.TableName + " close.")
 	defer db.Close()
+	defer db.Free()
 }
 
 func (t Table) Get(fields string, search string, sort string, start int, limit int) ReturnFunction {
