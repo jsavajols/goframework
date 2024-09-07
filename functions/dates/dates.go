@@ -15,21 +15,15 @@ func GetParisTime() time.Time {
 	return parisTime
 }
 
+// Fonction pour obtenir le dernier jour du mois donné
 func LastDayOfMonth(year int, month int) int {
-	// Convertir l'entier du mois en time.Month
-	tMonth := time.Month(month)
-
-	// Passer au premier jour du mois suivant
-	firstDayNextMonth := time.Date(year, tMonth+1, 1, 0, 0, 0, 0, time.UTC)
-
-	// Reculer d'un jour pour obtenir le dernier jour du mois actuel
-	lastDay := firstDayNextMonth.AddDate(0, 0, -1)
-
-	// Retourner seulement le jour sous forme d'entier
-	return lastDay.Day()
+	// Passer au premier jour du mois suivant, puis reculer d'un jour
+	nextMonth := time.Date(year, time.Month(month)+1, 1, 0, 0, 0, 0, time.UTC)
+	lastDayOfMonth := nextMonth.AddDate(0, 0, -1)
+	return lastDayOfMonth.Day()
 }
 
-func FirstAndLastDayOfWeek(year int, month int, week int) (int, int) {
+func FirstAndLastDayOfWeek(year int, month int, week int) (time.Time, time.Time) {
 	// Définir le premier jour du mois donné
 	firstDayOfMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 
@@ -45,12 +39,15 @@ func FirstAndLastDayOfWeek(year int, month int, week int) (int, int) {
 	// Calculer le dernier jour de la semaine donnée
 	endOfWeek := startOfWeek.AddDate(0, 0, 6)
 
-	// Vérifier si la semaine dépasse le mois donné
-	if endOfWeek.Month() != time.Month(month) {
-		endOfWeek = time.Date(year, time.Month(month), LastDayOfMonth(year, month), 0, 0, 0, 0, time.UTC)
+	// Obtenir le dernier jour du mois
+	lastDayOfMonth := LastDayOfMonth(year, month)
+
+	// Si la fin de la semaine dépasse le dernier jour du mois, on ajuste la fin de semaine
+	if endOfWeek.Day() > lastDayOfMonth {
+		endOfWeek = time.Date(year, time.Month(month), lastDayOfMonth, 0, 0, 0, 0, time.UTC)
 	}
 
-	return startOfWeek.Day(), endOfWeek.Day()
+	return startOfWeek, endOfWeek
 }
 
 func WeekNumberFromDate(dateStr string) (int, error) {
