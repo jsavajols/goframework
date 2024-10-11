@@ -3,8 +3,10 @@ package tables
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/jsavajols/goframework/functions/database"
+	"github.com/jsavajols/goframework/functions/fstrings"
 
 	con "github.com/jsavajols/goframework/const"
 
@@ -29,6 +31,7 @@ type DefaultValidator struct{}
 
 // Structure de base Table
 type Table struct {
+	Dialect          string
 	Database         string
 	TableName        string
 	Source           string
@@ -104,17 +107,31 @@ func (t *Table) Insert(fields string, values []interface{}) ReturnFunction {
 
 	// Ici, insérez la logique d'insertion réelle si BeforeInsert réussit
 
-	db, _ := t.Open()
-	nbPoints := "("
-	for i := 0; i < len(values); i++ {
-		if i == len(values)-1 {
-			nbPoints = nbPoints + "?) "
-		} else {
-			nbPoints = nbPoints + "?, "
+	var sqlResult sql.Result
+	db, dialect, _ := t.Open()
+	t.Dialect = dialect
+	nbPoints := ""
+	if t.Dialect == "postgres" {
+		nbPoints = "("
+		for i := 0; i < len(values); i++ {
+			if i == len(values)-1 {
+				nbPoints = nbPoints + "$" + fstrings.ToString(i+1) + ") "
+			} else {
+				nbPoints = nbPoints + "$" + fstrings.ToString(i+1) + ", "
+			}
+		}
+	} else {
+		nbPoints = "("
+		for i := 0; i < len(values); i++ {
+			if i == len(values)-1 {
+				nbPoints = nbPoints + "?) "
+			} else {
+				nbPoints = nbPoints + "?, "
+			}
 		}
 	}
 	logs.Logs("INSERT INTO "+t.TableName+" "+fields+"  VALUES "+nbPoints, values)
-	sqlResult, err := db.Exec("INSERT INTO "+t.TableName+" "+fields+"  VALUES "+nbPoints, values...)
+	sqlResult, err = db.Exec("INSERT INTO "+t.TableName+" "+fields+"  VALUES "+nbPoints, values...)
 	if err != nil {
 		errorMessage = err.Error()
 		log.Error(errorMessage)
@@ -147,9 +164,9 @@ func (t *Table) Insert(fields string, values []interface{}) ReturnFunction {
 	return returnFunction
 }
 
-func (t Table) Open() (*sql.DB, error) {
+func (t Table) Open() (*sql.DB, string, error) {
 	logs.Logs("database " + t.Database + " " + t.TableName + " open.")
-	return database.ConnectDatabase(t.Database)
+	return database.ConnectDatabase(t.Database, t.Dialect)
 }
 
 func (t Table) Close(db *sql.DB) {
@@ -163,6 +180,10 @@ func (t Table) Get(fields string, search string, sort string, start int, limit i
 	getRecords := 0
 	limits := ""
 	var statusCode int32
+
+	db, dialect, _ := t.Open()
+	t.Dialect = dialect
+
 	if fields == "" {
 		fields = "*"
 	}
@@ -174,7 +195,11 @@ func (t Table) Get(fields string, search string, sort string, start int, limit i
 	}
 	// Gère start et limit
 	if start != 0 || limit != 0 {
-		limits = " limit " + fmt.Sprint(start) + ", " + fmt.Sprint(limit)
+		if t.Dialect == "postgres" {
+			limits = " offset " + fmt.Sprint(start) + " limit " + fmt.Sprint(limit)
+		} else {
+			limits = " limit " + fmt.Sprint(start) + ", " + fmt.Sprint(limit)
+		}
 	}
 	// Limite au nombre de lignes maximum defini dans const/const.go
 	if limit > con.ROWS_LIMIT {
@@ -182,7 +207,6 @@ func (t Table) Get(fields string, search string, sort string, start int, limit i
 		limit = con.ROWS_LIMIT
 	}
 
-	db, _ := t.Open()
 	sql := t.buildQuery(fields, search, sort, limits)
 	logs.Logs(sql)
 	stmt, err := db.Prepare(sql)
@@ -227,6 +251,34 @@ func (t Table) buildQuery(fields string, search string, sort string, limits stri
 		toReturn = t.Source + search + sort + limits
 	} else {
 		toReturn = "select " + fields + " from " + t.TableName + search + sort + limits
+	}
+	if t.Dialect != "mysql" {
+		toReturn = strings.ReplaceAll(toReturn, "RAND", "RANDOM")
+		toReturn = strings.ReplaceAll(toReturn, "ucase", "upper")
+	}
+	if t.Dialect == "postgres" {
+		toReturn = strings.ReplaceAll(toReturn, `""`, `**++--`)
+		toReturn = strings.ReplaceAll(toReturn, `"`, `'`)
+		toReturn = strings.ReplaceAll(toReturn, `**++--`, `"`)
+		// ajoute des " pour les noms de colonnes
+		fieldsList := strings.Split(fields, ",")
+		for i, field := range fieldsList {
+			fieldsList[i] = "\"" + strings.TrimSpace(field) + "\""
+		}
+		fields = strings.Join(fieldsList, ",")
+		// Si la source est définie, on recherche les noms de colonnes dans la source pour y ajouter des " si besoin
+		if t.Source != "" {
+			fieldsList := strings.Split(t.Source, "as")
+			for i, field := range fieldsList {
+				startField := strings.Index(field, " ")
+				endField := strings.LastIndex(field, " ")
+				if endField == -1 {
+					endField = strings.LastIndex(field, ",")
+				}
+				fieldsList[i] = "\"" + field[startField:endField] + "\""
+			}
+			fields = strings.Join(fieldsList, ",")
+		}
 	}
 	return toReturn
 }
@@ -318,18 +370,23 @@ func (t Table) Update(fields []string, values []interface{}, types []interface{}
 	}
 
 	// Ici, insérez la logique de mise à jour réelle si BeforeUpdate réussit
-	db, _ := t.Open()
+	db, dialect, _ := t.Open()
+	t.Dialect = dialect
 	toUpdate := ""
+	quote := con.QUOTE
+	if t.Dialect == "postgres" {
+		quote = "'"
+	}
 	for i := 0; i < len(fields); i++ {
 		if i == len(values)-1 {
 			if types[i] == "string" {
-				toUpdate = toUpdate + fields[i] + " = " + con.QUOTE + fmt.Sprintf("%v", values[i]) + con.QUOTE
+				toUpdate = toUpdate + fields[i] + " = " + quote + fmt.Sprintf("%v", values[i]) + quote
 			} else {
 				toUpdate = toUpdate + fields[i] + " = " + fmt.Sprintf("%v", values[i])
 			}
 		} else {
 			if types[i] == "string" {
-				toUpdate = toUpdate + fields[i] + " = " + con.QUOTE + fmt.Sprintf("%v", values[i]) + con.QUOTE + ", "
+				toUpdate = toUpdate + fields[i] + " = " + quote + fmt.Sprintf("%v", values[i]) + quote + ", "
 			} else {
 				toUpdate = toUpdate + fields[i] + " = " + fmt.Sprintf("%v", values[i]) + ", "
 			}
@@ -399,7 +456,8 @@ func (t Table) Delete(search string) ReturnFunction {
 	if search == "" {
 		search = "true"
 	}
-	db, _ := t.Open()
+	db, dialect, _ := t.Open()
+	t.Dialect = dialect
 	err := t.Validator.BeforeDelete()
 	if err != nil {
 		logs.Logs("Échec lors de la préparation avant suppression:", err)

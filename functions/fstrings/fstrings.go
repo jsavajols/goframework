@@ -3,6 +3,7 @@ package fstrings
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	logs "github.com/jsavajols/goframework/functions/logs"
 )
@@ -21,6 +22,13 @@ func UpperString(s interface{}) string {
 		return ""
 	}
 	return strings.ToUpper(s.(string))
+}
+
+func LowerString(s interface{}) string {
+	if s == nil {
+		return ""
+	}
+	return strings.ToLower(s.(string))
 }
 
 func NilInt(s interface{}) string {
@@ -44,6 +52,8 @@ func ToString(s interface{}) string {
 		return strconv.FormatFloat(float64(v), 'f', -1, 64)
 	case float64:
 		return strconv.FormatFloat(v, 'f', -1, 64)
+	case time.Time:
+		return v.Format("2006-01-02")
 	case string:
 		return v
 	default:
