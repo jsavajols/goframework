@@ -52,6 +52,8 @@ func ToString(s interface{}) string {
 		return strconv.FormatFloat(float64(v), 'f', -1, 64)
 	case float64:
 		return strconv.FormatFloat(v, 'f', -1, 64)
+	case bool:
+		return strconv.FormatBool(v)
 	case time.Time:
 		return v.Format("2006-01-02")
 	case string:
@@ -107,6 +109,27 @@ func ToFloat(s interface{}) float64 {
 		}
 	default:
 		return 0
+	}
+}
+
+func ToBool(s interface{}) bool {
+	switch v := s.(type) {
+	case int:
+		if v == 1 {
+			return true
+		} else {
+			return false
+		}
+	case string:
+		if v == "true" || v == "1" {
+			return true
+		} else {
+			return false
+		}
+	case bool:
+		return v
+	default:
+		return false
 	}
 }
 
