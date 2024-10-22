@@ -112,6 +112,7 @@ func ToFloat(s interface{}) float64 {
 	}
 }
 
+// Converti un élément en booléen
 func ToBool(s interface{}) bool {
 	switch v := s.(type) {
 	case int:
