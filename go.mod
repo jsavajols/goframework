@@ -3,9 +3,9 @@ module github.com/jsavajols/goframework
 go 1.22.2
 
 require (
-	github.com/aws/aws-sdk-go v1.51.22
+	github.com/aws/aws-sdk-go v1.55.5
 	github.com/go-sql-driver/mysql v1.8.1
-	github.com/gofiber/fiber/v2 v2.52.4
+	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.24
 )
