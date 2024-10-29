@@ -55,7 +55,11 @@ func ToString(s interface{}) string {
 	case bool:
 		return strconv.FormatBool(v)
 	case time.Time:
-		return v.Format("2006-01-02")
+		if v.Hour() != 0 || v.Minute() != 0 || v.Second() != 0 {
+			return v.Format("2006-01-02 15:04:05")
+		} else {
+			return v.Format("2006-01-02")
+		}
 	case string:
 		return v
 	default:
