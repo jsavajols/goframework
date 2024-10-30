@@ -125,6 +125,18 @@ func ToBool(s interface{}) bool {
 		} else {
 			return false
 		}
+	case int32:
+		if v == 1 {
+			return true
+		} else {
+			return false
+		}
+	case int64:
+		if v == 1 {
+			return true
+		} else {
+			return false
+		}
 	case string:
 		if v == "true" || v == "1" {
 			return true
@@ -135,6 +147,23 @@ func ToBool(s interface{}) bool {
 		return v
 	default:
 		return false
+	}
+}
+
+// Converti une chaine en datetime
+func ToDateTime(s interface{}) time.Time {
+	switch v := s.(type) {
+	case time.Time:
+		return v
+	case string:
+		result, err := time.Parse("2006-01-02 15:04:05", v)
+		if err != nil {
+			return time.Time{}
+		} else {
+			return result
+		}
+	default:
+		return time.Time{}
 	}
 }
 

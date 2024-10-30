@@ -1,6 +1,10 @@
 package dates
 
-import "time"
+import (
+	"time"
+
+	"github.com/jsavajols/goframework/functions/fstrings"
+)
 
 func GetParisTime() time.Time {
 	// Charger le fuseau horaire Europe/Paris
@@ -81,4 +85,18 @@ func ConvertDateToFrench(dateStr, withHour string) (string, error) {
 	}
 
 	return formattedDate, nil
+}
+
+func DateDiff(fromDate, toDate string) int {
+	// Extrait l'heure de la chaine de caractères de la base de données
+	fromHour := fstrings.ToInt(fromDate[11:13])
+	fromMinutes := fstrings.ToInt(fromDate[14:16])
+	fromSeconds := fstrings.ToInt(fromDate[17:19])
+	// Extrait l'heure actuelle
+	hourNow := fstrings.ToInt(time.Now().Format("15"))
+	minutesNow := fstrings.ToInt(time.Now().Format("04"))
+	secondsNow := fstrings.ToInt(time.Now().Format("05"))
+	// Calcul de la différence entre les deux heures
+	offsetTime := hourNow - fromHour + (minutesNow-fromMinutes)/60 + (secondsNow-fromSeconds)/3600
+	return offsetTime
 }
