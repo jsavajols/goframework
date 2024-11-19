@@ -39,7 +39,7 @@ func SendMail(vars map[string]string) error {
 	dateHeader := fmt.Sprintf("Date: %s\r\n", date)
 
 	// Création d'un Message-ID unique
-	messageID := fmt.Sprintf("<%d.%d@1clusif.org>", time.Now().UnixNano(), 12345)
+	messageID := fmt.Sprintf("<%d.%d@"+os.Getenv("DOMAIN")+"", time.Now().UnixNano(), 12345)
 	messageIDHeader := fmt.Sprintf("Message-ID: %s\r\n", messageID)
 
 	msg := "From: " + vars["sender"] + " <" + from + ">\n" +
