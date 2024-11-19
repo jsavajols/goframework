@@ -34,9 +34,19 @@ func SendMail(vars map[string]string) error {
 		templateToApply = strings.Replace(templateToApply, "{{"+key+"}}", value, -1)
 	}
 
+	// Formatage de l'en-tête "Date"
+	date := time.Now().Format(time.RFC1123Z)
+	dateHeader := fmt.Sprintf("Date: %s\r\n", date)
+
+	// Création d'un Message-ID unique
+	messageID := fmt.Sprintf("<%d.%d@1clusif.org>", time.Now().UnixNano(), 12345)
+	messageIDHeader := fmt.Sprintf("Message-ID: %s\r\n", messageID)
+
 	msg := "From: " + vars["sender"] + " <" + from + ">\n" +
 		"To: " + vars["email"] + "\n" +
 		"Subject: " + vars["subject"] + "\n" +
+		dateHeader +
+		messageIDHeader +
 		"MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n" +
 		templateToApply
 
