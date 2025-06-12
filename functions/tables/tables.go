@@ -3,6 +3,7 @@ package tables
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/jsavajols/goframework/functions/database"
@@ -240,6 +241,25 @@ func (t Table) Get(fields string, search string, sort string, start int, limit i
 	return returnFunction
 }
 
+var SuspiciousPatterns = []*regexp.Regexp{
+	regexp.MustCompile(`1=1`), // SQL comment
+	regexp.MustCompile(`#`),   // SQL comment
+	regexp.MustCompile(`--`),  // SQL comment
+	regexp.MustCompile(`/\*`), // SQL multi-line comment
+	regexp.MustCompile(`;`),   // Statement terminator
+}
+
+// CheckForSQLInjection inspects a string for potential SQL injection patterns
+func CheckForSQLInjection(input string) bool {
+	input = strings.TrimSpace(input)
+	for _, pattern := range SuspiciousPatterns {
+		if pattern.MatchString(input) {
+			logs.Logs("Suspicious pattern found: ", pattern.String())
+			return true
+		}
+	}
+	return false
+}
 func (t Table) buildQuery(fields string, search string, sort string, limits string) string {
 	toReturn := ""
 	if search != "-" {
@@ -279,6 +299,9 @@ func (t Table) buildQuery(fields string, search string, sort string, limits stri
 			}
 			fields = strings.Join(fieldsList, ",")
 		}
+	}
+	if CheckForSQLInjection(toReturn) {
+		return ""
 	}
 	return toReturn
 }
