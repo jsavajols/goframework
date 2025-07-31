@@ -113,7 +113,7 @@ func GeneratePresignedURL(objectKey string) (string, error) {
 	return urlStr, nil
 }
 
-func downloadFileFromS3(bucketName, fileKey string) error {
+func DownloadFileFromS3(bucketName, fileKey string) error {
 	// Créez une nouvelle session AWS en utilisant les clés d'accès OVH et l'endpoint S3 OVH
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(os.Getenv("OVH_REGION")),   // Exemple de région OVH, ajustez selon votre région
@@ -141,7 +141,7 @@ func downloadFileFromS3(bucketName, fileKey string) error {
 	defer result.Body.Close()
 
 	// Créez un fichier local pour sauvegarder le contenu téléchargé
-	file, err := os.Create(fileKey + "-downloaded.png")
+	file, err := os.Create(fileKey + "-downloaded")
 	if err != nil {
 		return err
 	}
