@@ -383,19 +383,23 @@ func (t Table) Update(fields []string, values []interface{}, types []interface{}
 	}
 	for i := 0; i < len(fields); i++ {
 		if i == len(values)-1 {
-			if types[i] == "string" {
+			if types[i] == "string" || types[i] == "date" || types[i] == "datetime" {
 				toUpdate = toUpdate + fields[i] + " = " + quote + fmt.Sprintf("%v", values[i]) + quote
 			} else {
 				toUpdate = toUpdate + fields[i] + " = " + fmt.Sprintf("%v", values[i])
 			}
 		} else {
-			if types[i] == "string" {
+			if types[i] == "string" || types[i] == "date" || types[i] == "datetime" {
 				toUpdate = toUpdate + fields[i] + " = " + quote + fmt.Sprintf("%v", values[i]) + quote + ", "
 			} else {
 				toUpdate = toUpdate + fields[i] + " = " + fmt.Sprintf("%v", values[i]) + ", "
 			}
 		}
 	}
+
+	// Corrige les valeurs null pour enlever les quotes
+	toUpdate = strings.ReplaceAll(toUpdate, quote+"null"+quote, "null")
+
 	if filter != "" {
 		filter = " where " + filter
 	} else {
