@@ -73,6 +73,21 @@ func (dv DefaultValidator) BeforeInsert() error {
 	return nil
 }
 
+func ExecSql(dbName, dialect, sql string) (sql.Result, error) {
+	db, _, _ := database.ConnectDatabase(dbName, dialect)
+	if db == nil {
+		return nil, fmt.Errorf("Erreur de connexion à la base de données")
+	}
+	defer db.Close()
+	logs.Logs("Exécution de la requête SQL:", sql)
+	result, err := db.Exec(sql)
+	if err != nil {
+		log.Error("Erreur lors de l'exécution de la requête SQL:", err)
+		return nil, err
+	}
+	return result, nil
+}
+
 // Insert méthode pour Table
 func (t *Table) Insert(fields string, values []interface{}) ReturnFunction {
 	errorMessage := ""
