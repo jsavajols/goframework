@@ -73,6 +73,7 @@ func (dv DefaultValidator) BeforeInsert() error {
 	return nil
 }
 
+// ExecSql exécute une requête SQL et retourne le résultat ou une erreur
 func ExecSql(dbName, dialect, sql string) (sql.Result, error) {
 	db, _, _ := database.ConnectDatabase(dbName, dialect)
 	if db == nil {
